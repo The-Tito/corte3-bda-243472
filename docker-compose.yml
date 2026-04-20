@@ -1,0 +1,78 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: clinica_vet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_pass_2026
+    volumes:
+      - ./schema_corte3.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./backend/01_procedures.sql:/docker-entrypoint-initdb.d/02_procedures.sql
+      - ./backend/02_triggers.sql:/docker-entrypoint-initdb.d/03_triggers.sql
+      - ./backend/03_views.sql:/docker-entrypoint-initdb.d/04_views.sql
+      - ./backend/04_roles_y_permisos.sql:/docker-entrypoint-initdb.d/05_roles.sql
+      - ./backend/05_rls.sql:/docker-entrypoint-initdb.d/06_rls.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clinica-net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clinica-net
+
+  api:
+    build: ./api
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: clinica_vet
+      DB_USER: app_api
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_URL: redis://redis:6379
+      PORT: 3001
+    networks:
+      - clinica-net
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    networks:
+      - clinica-net
+
+networks:
+  clinica-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
