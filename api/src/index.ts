@@ -6,6 +6,8 @@ import mascotasRouter from './routes/mascotas';
 import vacunacionRouter from './routes/vacunacion';
 import citasRouter from './routes/citas';
 import vacunasAplicadasRouter from './routes/vacunasAplicadas';
+import auditoriaRouter from './routes/auditoria';
+import inventarioRouter from './routes/inventario';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -34,6 +36,8 @@ app.use('/api/mascotas', mascotasRouter);
 app.use('/api/vacunacion-pendiente', vacunacionRouter);
 app.use('/api/citas', citasRouter);
 app.use('/api/vacunas-aplicadas', vacunasAplicadasRouter);
+app.use('/api/auditoria', auditoriaRouter);
+app.use('/api/inventario', inventarioRouter);
 
 // Health-check endpoint
 app.get('/health', (_req: Request, res: Response) => {

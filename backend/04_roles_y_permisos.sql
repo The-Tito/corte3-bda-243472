@@ -83,7 +83,7 @@ GRANT USAGE ON SEQUENCE vacunas_aplicadas_id_seq  TO veterinario;
 
 -- Procedures & Functions
 GRANT EXECUTE ON PROCEDURE sp_agendar_cita(INT, INT, TIMESTAMP, TEXT, INT) TO veterinario;
-GRANT EXECUTE ON FUNCTION  fn_calcular_facturacion(INT, INT)                TO veterinario;
+GRANT EXECUTE ON FUNCTION  fn_total_facturado(INT, INT)                TO veterinario;
 
 -- Views
 GRANT SELECT ON v_mascotas_vacunacion_pendiente TO veterinario;
@@ -147,7 +147,7 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO administrador;
 
 -- All routines
 GRANT EXECUTE ON PROCEDURE sp_agendar_cita(INT, INT, TIMESTAMP, TEXT, INT) TO administrador;
-GRANT EXECUTE ON FUNCTION  fn_calcular_facturacion(INT, INT)                TO administrador;
+GRANT EXECUTE ON FUNCTION  fn_total_facturado(INT, INT)                TO administrador;
 GRANT EXECUTE ON FUNCTION  fn_registrar_historial_cita()                    TO administrador;
 
 -- Views

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import NavHeader from './components/NavHeader'
+import { SessionDebugger } from './components/SessionDebugger'
 
 export const metadata: Metadata = {
   title: 'Clinica Veterinaria',
@@ -24,6 +25,7 @@ export default function RootLayout({
       >
         <NavHeader />
         <main style={{ padding: '2rem' }}>{children}</main>
+        <SessionDebugger />
       </body>
     </html>
   )

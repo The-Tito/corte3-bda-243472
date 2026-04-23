@@ -8,6 +8,8 @@ interface Mascota {
   nombre: string
   especie: string
   dueno_id: number
+  dueno_nombre: string
+  dueno_telefono: string
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -213,7 +215,7 @@ export default function MascotasPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                  {['ID', 'Nombre', 'Especie', 'Dueno ID'].map((h) => (
+                  {['ID', 'Nombre', 'Especie', 'Dueño', 'Teléfono'].map((h) => (
                     <th
                       key={h}
                       style={{
@@ -250,7 +252,10 @@ export default function MascotasPage() {
                       {m.especie}
                     </td>
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', color: '#374151' }}>
-                      {m.dueno_id}
+                      {m.dueno_nombre}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', color: '#374151' }}>
+                      {m.dueno_telefono}
                     </td>
                   </tr>
                 ))}

@@ -19,18 +19,20 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       if (nombre && typeof nombre === 'string' && nombre.trim() !== '') {
         // Parametrized ILIKE — the search term is NEVER concatenated into the query string
         const result = await client.query(
-          `SELECT id, nombre, especie, dueno_id
-           FROM mascotas
-           WHERE nombre ILIKE $1
-           ORDER BY nombre`,
+          `SELECT m.id, m.nombre, m.especie, m.dueno_id, d.nombre as dueno_nombre, d.telefono as dueno_telefono
+           FROM mascotas m
+           JOIN duenos d ON m.dueno_id = d.id
+           WHERE m.nombre ILIKE $1
+           ORDER BY m.nombre`,
           [`%${nombre.trim()}%`]
         );
         return result.rows;
       } else {
         const result = await client.query(
-          `SELECT id, nombre, especie, dueno_id
-           FROM mascotas
-           ORDER BY nombre`
+          `SELECT m.id, m.nombre, m.especie, m.dueno_id, d.nombre as dueno_nombre, d.telefono as dueno_telefono
+           FROM mascotas m
+           JOIN duenos d ON m.dueno_id = d.id
+           ORDER BY m.nombre`
         );
         return result.rows;
       }

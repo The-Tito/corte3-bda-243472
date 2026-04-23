@@ -20,7 +20,7 @@ Todos los ataques se ejecutaron contra el endpoint `GET /api/mascotas?nombre=<in
 
 **Resultado:** La búsqueda retorna 0 resultados. El sistema busca literalmente la cadena `' OR '1'='1` como nombre de mascota, valor que no existe en la base de datos. No se devuelven filas adicionales ni se altera el comportamiento de la consulta.
 
-**Explicación:** El endpoint `GET /api/mascotas` utiliza prepared statements/parametrización en PostgreSQL. El input del usuario se pasa como parámetro `$1` en la query:
+**Explicación y Línea Defensora:** El ataque es mitigado en el archivo `api/src/routes/mascotas.ts` (líneas 21-28). El endpoint utiliza prepared statements/parametrización con el driver `pg` de Node.js. El input del usuario se pasa como parámetro `$1` en la query:
 
 ```sql
 SELECT id, nombre, especie, dueno_id
@@ -42,7 +42,7 @@ El driver `pg` de Node.js envía el valor `%' OR '1'='1%` como dato separado del
 
 **Resultado:** La tabla `mascotas` sigue existiendo tras el intento. El sistema retorna 0 resultados sin ejecutar la instrucción `DROP`. La base de datos permanece intacta y el servicio continúa operando con normalidad.
 
-**Explicación:** La parametrización previene totalmente la ejecución de statements apilados. El punto y coma (`;`) es tratado como texto literal dentro del valor del parámetro `$1`, no como separador de instrucciones SQL. El driver `pg` de Node.js, al usar el protocolo extendido de PostgreSQL, no permite que un solo parámetro contenga múltiples queries. El motor ejecuta únicamente el `SELECT ILIKE` original con el string completo `%'; DROP TABLE mascotas; --%` como valor de búsqueda.
+**Explicación y Línea Defensora:** La defensa ocurre en `api/src/routes/mascotas.ts` (líneas 21-28). La parametrización previene totalmente la ejecución de statements apilados. El punto y coma (`;`) es tratado como texto literal dentro del valor del parámetro `$1`, no como separador de instrucciones SQL. El driver `pg` de Node.js, al usar el protocolo extendido de PostgreSQL, no permite que un solo parámetro contenga múltiples queries. El motor ejecuta únicamente el `SELECT ILIKE` original con el string completo `%'; DROP TABLE mascotas; --%` como valor de búsqueda.
 
 ![SQL Injection 2](evidencias/sql_injection_2.png)
 
@@ -56,7 +56,7 @@ El driver `pg` de Node.js envía el valor `%' OR '1'='1%` como dato separado del
 
 **Resultado:** 0 resultados. No se revela ningún dato de la tabla `veterinarios`. La respuesta JSON devuelve un arreglo vacío `[]`, sin exponer ninguna columna sensible como cédulas o nombres de veterinarios.
 
-**Explicación:** Toda la cadena `' UNION SELECT id, cedula, NULL, NULL FROM veterinarios --` es tratada como el valor literal del parámetro `$1` de búsqueda ILIKE. La palabra clave `UNION` forma parte del texto que se busca como nombre de mascota, no se interpreta como operador SQL. Los prepared statements garantizan la separación estricta entre código SQL (la query) y datos (el parámetro). Incluso si la query fuera vulnerable al nivel de texto, la columna `cedula` no está expuesta en las políticas RLS del rol `app_api`.
+**Explicación y Línea Defensora:** El ataque falla gracias a `api/src/routes/mascotas.ts` (líneas 21-28). Toda la cadena `' UNION SELECT id, cedula, NULL, NULL FROM veterinarios --` es tratada como el valor literal del parámetro `$1` de búsqueda ILIKE. La palabra clave `UNION` forma parte del texto que se busca como nombre de mascota, no se interpreta como operador SQL. Los prepared statements garantizan la separación estricta entre código SQL (la query) y datos (el parámetro). Incluso si la query fuera vulnerable al nivel de texto, la columna `cedula` no está expuesta en las políticas RLS del rol `app_api`.
 
 ![SQL Injection 3](evidencias/sql_injection_3.png)
 

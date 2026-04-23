@@ -87,4 +87,31 @@ Esto neutraliza: inyecciones de comillas simples (Quote-Escape), sentencias apil
 | **Consultar agenda propia** (`GET /api/citas`) | Se revoca `SELECT` en `citas` → el veterinario no puede leer sus propias citas programadas; el endpoint retorna error o arreglo vacio segun el manejo de errores. |
 
 Solo quedaria funcional la busqueda de mascotas (`GET /api/mascotas`), que es el unico permiso conservado. El sistema quedaria practicamente inutilizable para el rol veterinario.
+
+---
+
+### 7. Documentación de Roles y Permisos (GRANT / REVOKE)
+
+Se han implementado los siguientes tres roles en PostgreSQL, siguiendo el principio de mínimo privilegio para garantizar la seguridad de los datos:
+
+#### Rol: `veterinario`
+- **Justificación:** Necesita acceder a la información clínica básica pero solo gestionar la de sus propios pacientes. No debe modificar inventario ni auditar el sistema.
+- **Permisos:**
+  - `SELECT` en `mascotas`, `duenos` y `vet_atiende_mascota` (para leer datos de los pacientes y contactos).
+  - `SELECT`, `INSERT` en `citas` y `vacunas_aplicadas` (para ver y registrar nuevas intervenciones médicas).
+  - Limitado a ciertas columnas en `veterinarios` (id, nombre, cedula, activo, dias_descanso) e `inventario_vacunas` (id, nombre, stock_actual) para que no vea información financiera/sensible o ajena a su función operativa.
+
+#### Rol: `recepcion`
+- **Justificación:** Se encarga del flujo de citas y registro de usuarios, pero no tiene competencia médica.
+- **Permisos:**
+  - `SELECT` en `mascotas` y `duenos` (para buscar clientes y pacientes).
+  - `SELECT`, `INSERT` en `citas` (su labor principal es agendar).
+  - `SELECT` en algunas columnas de `veterinarios` (para ver la disponibilidad en agenda).
+  - **Restricción explícita:** *No se le dio ningún permiso* sobre `vacunas_aplicadas`, `inventario_vacunas`, ni tablas del sistema, ya que el historial médico está fuera de sus funciones.
+
+#### Rol: `administrador`
+- **Justificación:** Es el administrador del sistema y gestor de inventarios y personal, requiriendo visibilidad y control sobre todos los procesos de la clínica.
+- **Permisos:**
+  - `ALL PRIVILEGES` (todos los permisos) sobre todas las tablas de negocio, secuencias y procedimientos del esquema, incluyendo la lectura irrestricta de `historial_movimientos` y `alertas`.
+
 # corte3-bda-243472

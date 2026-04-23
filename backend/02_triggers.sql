@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION fn_registrar_historial_cita()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER   -- Audit functions need DEFINER so low-privilege roles can write the audit trail
+SET search_path = public, pg_temp
 AS $$
 BEGIN
     INSERT INTO historial_movimientos (tipo, referencia_id, descripcion, fecha)

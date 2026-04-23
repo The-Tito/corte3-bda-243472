@@ -34,6 +34,16 @@ export default function NavHeader() {
 
   const roleColor = role ? (ROLE_COLORS[role] ?? '#555') : '#555'
 
+  const linkStyle: React.CSSProperties = {
+    color: '#93c5fd',
+    textDecoration: 'none',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    padding: '4px 10px',
+    borderRadius: '6px',
+    transition: 'background 0.15s, color 0.15s',
+  }
+
   return (
     <header
       style={{
@@ -51,44 +61,28 @@ export default function NavHeader() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-        <span style={{ fontWeight: 700, fontSize: '1.15rem', letterSpacing: '0.02em' }}>
-          Clinica Veterinaria
+        <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
+          🐾 Clínica Vet
         </span>
-        <nav style={{ display: 'flex', gap: '1.25rem' }}>
-          <a
-            href="/mascotas"
-            style={{
-              color: '#93c5fd',
-              textDecoration: 'none',
-              fontSize: '0.95rem',
-              fontWeight: 500,
-              transition: 'color 0.15s',
-            }}
-          >
-            Mascotas
-          </a>
-          <a
-            href="/vacunacion"
-            style={{
-              color: '#93c5fd',
-              textDecoration: 'none',
-              fontSize: '0.95rem',
-              fontWeight: 500,
-            }}
-          >
-            Vacunacion
-          </a>
-          <a
-            href="/citas/nueva"
-            style={{
-              color: '#93c5fd',
-              textDecoration: 'none',
-              fontSize: '0.95rem',
-              fontWeight: 500,
-            }}
-          >
-            Nueva Cita
-          </a>
+        <nav style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <a href="/mascotas" style={linkStyle}>Mascotas</a>
+          <a href="/vacunacion" style={linkStyle}>Vacunación</a>
+          <a href="/citas/nueva" style={linkStyle}>Nueva Cita</a>
+
+          {/* Inventario: visible for veterinario and administrador */}
+          {(role === 'veterinario' || role === 'administrador') && (
+            <a href="/inventario" style={linkStyle}>Inventario</a>
+          )}
+
+          {/* Auditoría: visible only for administrador */}
+          {role === 'administrador' && (
+            <a
+              href="/admin/auditoria"
+              style={{ ...linkStyle, color: '#fca5a5' }}
+            >
+              Auditoría
+            </a>
+          )}
         </nav>
       </div>
 
@@ -100,10 +94,11 @@ export default function NavHeader() {
               color: '#fff',
               borderRadius: '999px',
               padding: '3px 14px',
-              fontSize: '0.82rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
             }}
           >
             {ROLE_LABELS[role] ?? role}
@@ -123,7 +118,7 @@ export default function NavHeader() {
             cursor: 'pointer',
           }}
         >
-          Cerrar Sesion
+          Cerrar Sesión
         </button>
       </div>
     </header>

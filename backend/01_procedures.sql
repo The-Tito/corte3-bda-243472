@@ -110,9 +110,9 @@ COMMENT ON PROCEDURE sp_agendar_cita(INT, INT, TIMESTAMP, TEXT, INT) IS
 --    SECURITY INVOKER: no privilege escalation.
 -- =============================================================
 
-CREATE OR REPLACE FUNCTION fn_calcular_facturacion(
+CREATE OR REPLACE FUNCTION fn_total_facturado(
     p_mascota_id  INT,
-    p_año         INT
+    p_anio         INT
 )
 RETURNS NUMERIC
 LANGUAGE sql
@@ -122,10 +122,10 @@ AS $$
     SELECT COALESCE(SUM(costo), 0.00)
       FROM citas
      WHERE mascota_id = p_mascota_id
-       AND EXTRACT(YEAR FROM fecha_hora) = p_año
+       AND EXTRACT(YEAR FROM fecha_hora) = p_anio
        AND estado = 'COMPLETADA';
 $$;
 
-COMMENT ON FUNCTION fn_calcular_facturacion(INT, INT) IS
+COMMENT ON FUNCTION fn_total_facturado(INT, INT) IS
     'Devuelve el total facturado (suma de costo) de las citas COMPLETADAS '
     'de una mascota en un año dado. Retorna 0.00 si no hay citas.';
