@@ -48,4 +48,28 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/citas
+ * Fetches the appointments. RLS handles filtering automatically.
+ */
+router.get('/', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const result = await withRoleContext(req.userRole, req.vetId, async (client) => {
+      const queryResult = await client.query(
+        `SELECT c.id, m.nombre as mascota_nombre, v.nombre as veterinario_nombre, c.fecha_hora, c.motivo, c.estado
+         FROM citas c
+         JOIN mascotas m ON c.mascota_id = m.id
+         JOIN veterinarios v ON c.veterinario_id = v.id
+         ORDER BY c.fecha_hora DESC`
+      );
+      return queryResult.rows;
+    });
+
+    res.status(200).json({ citas: result });
+  } catch (err: any) {
+    console.error(`[${new Date().toISOString()}] [ERROR] GET /api/citas:`, err.message);
+    res.status(500).json({ error: 'No se pudieron consultar las citas', detail: err.message });
+  }
+});
+
 export default router;

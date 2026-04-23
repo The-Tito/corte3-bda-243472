@@ -44,6 +44,11 @@ export default function NavHeader() {
     transition: 'background 0.15s, color 0.15s',
   }
 
+  // Hide the navigation header entirely if the user is not logged in
+  if (!role) {
+    return null
+  }
+
   return (
     <header
       style={{
@@ -66,7 +71,16 @@ export default function NavHeader() {
         </span>
         <nav style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <a href="/mascotas" style={linkStyle}>Mascotas</a>
-          <a href="/vacunacion" style={linkStyle}>Vacunación</a>
+          
+          {/* Vacunación: visible para veterinario y administrador */}
+          {(role === 'veterinario' || role === 'administrador') && (
+            <a href="/vacunacion" style={linkStyle}>Vacunación</a>
+          )}
+
+          {/* Panel de citas general para veterinario y administrador */}
+          {(role === 'veterinario' || role === 'recepcion' || role === 'administrador') && (
+            <a href="/citas" style={linkStyle}>Mis Citas</a>
+          )}
           <a href="/citas/nueva" style={linkStyle}>Nueva Cita</a>
 
           {/* Inventario: visible for veterinario and administrador */}
