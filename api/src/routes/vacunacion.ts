@@ -12,8 +12,9 @@ const router = Router();
  */
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    // 1. Check cache first
-    const cached = await cacheGet(KEYS.vacunacionPendiente);
+    // 1. Check cache first (partitioned by role so unauthorized roles get a MISS and hit the DB)
+    const cacheKey = `${KEYS.vacunacionPendiente}:${req.userRole}`;
+    const cached = await cacheGet(cacheKey);
     if (cached !== null) {
       res.status(200).json({ mascotas: cached, cache_hit: true });
       return;
@@ -28,7 +29,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     });
 
     // 3. Store result in cache
-    await cacheSet(KEYS.vacunacionPendiente, mascotas, TTL.vacunacion);
+    await cacheSet(cacheKey, mascotas, TTL.vacunacion);
 
     res.status(200).json({ mascotas, cache_hit: false });
   } catch (err: any) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 const ROLE_LABELS: Record<string, string> = {
   veterinario: 'Veterinario',
@@ -20,15 +20,30 @@ export default function NavHeader() {
   const [role, setRole] = useState<string | null>(null)
   const [vetId, setVetId] = useState<string | null>(null)
 
+  const pathname = usePathname()
+
   useEffect(() => {
+    // This will re-run every time the pathname changes (e.g. after login/logout)
     setRole(localStorage.getItem('role'))
     setVetId(localStorage.getItem('vet_id'))
+  }, [pathname])
+
+  // Also listen for storage events in case another tab changes it
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setRole(localStorage.getItem('role'))
+      setVetId(localStorage.getItem('vet_id'))
+    }
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
 
   function handleLogout() {
     localStorage.removeItem('token')
     localStorage.removeItem('role')
     localStorage.removeItem('vet_id')
+    setRole(null)
+    setVetId(null)
     router.push('/login')
   }
 
@@ -72,8 +87,8 @@ export default function NavHeader() {
         <nav style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <a href="/mascotas" style={linkStyle}>Mascotas</a>
           
-          {/* Vacunación: visible para veterinario y administrador */}
-          {(role === 'veterinario' || role === 'administrador') && (
+          {/* Vacunación: visible para todos (para propósitos prácticos de prueba) */}
+          {(role === 'veterinario' || role === 'administrador' || role === 'recepcion') && (
             <a href="/vacunacion" style={linkStyle}>Vacunación</a>
           )}
 

@@ -49,7 +49,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     });
 
     // Invalidate the vacunacion pendiente cache so stale data is not served
-    await cacheDelete(KEYS.vacunacionPendiente);
+    await cacheDelete(`${KEYS.vacunacionPendiente}:veterinario`);
+    await cacheDelete(`${KEYS.vacunacionPendiente}:administrador`);
 
     res.status(201).json({
       id: newRecord?.id ?? null,
