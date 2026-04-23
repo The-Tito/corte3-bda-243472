@@ -43,19 +43,18 @@ export default function MascotasPage() {
     }
     setToken(t)
     setRole(r)
+    fetchMascotas(t, '')
   }, [router])
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
-    if (!token) return
+  async function fetchMascotas(authToken: string, searchQuery: string) {
     setError(null)
     setLoading(true)
     setSearched(true)
 
     try {
-      const url = `http://localhost:3001/api/mascotas${search ? `?nombre=${encodeURIComponent(search)}` : ''}`
+      const url = `http://localhost:3001/api/mascotas${searchQuery ? `?nombre=${encodeURIComponent(searchQuery)}` : ''}`
       const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       })
       const data = await res.json()
 
@@ -76,6 +75,12 @@ export default function MascotasPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    if (!token) return
+    fetchMascotas(token, search)
   }
 
   return (

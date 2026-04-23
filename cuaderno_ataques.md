@@ -142,10 +142,13 @@ CREATE POLICY admin_ver_mascotas ON mascotas
 
 El backend implementa una capa de caché con Redis para el endpoint `GET /api/vacunaciones/pendientes`. La estrategia combina **TTL fijo de 300 segundos** con **invalidación temprana (eager invalidation)** cuando se registra o actualiza una vacunación.
 
-### Clave de caché utilizada
+### Claves de caché utilizadas (Partición por Rol)
+
+Para evitar la vulnerabilidad de **Cache Bypass** (donde un rol sin permisos como Recepción podría leer datos cacheados por otro rol), la clave de caché es dinámica según la sesión:
 
 ```
-vacunacion:pendiente:all
+vacunacion:pendiente:all:veterinario
+vacunacion:pendiente:all:administrador
 ```
 
 ### Ciclo MISS → HIT → INVALIDATE → MISS
@@ -153,22 +156,23 @@ vacunacion:pendiente:all
 **Prueba de caché — log del servidor:**
 
 ```
-[2026-04-19T10:15:32.123Z] GET /api/vacunaciones/pendientes
-[2026-04-19T10:15:32.125Z] [CACHE MISS] vacunacion:pendiente:all
-[2026-04-19T10:15:32.198Z] [DB QUERY] SELECT ... FROM v_vacunaciones_pendientes (73ms)
-[2026-04-19T10:15:32.201Z] [CACHE SET] vacunacion:pendiente:all TTL=300s
+[2026-04-19T10:15:32.123Z] GET /api/vacunaciones/pendientes (como Veterinario)
+[2026-04-19T10:15:32.125Z] [CACHE MISS] vacunacion:pendiente:all:veterinario
+[2026-04-19T10:15:32.198Z] [DB QUERY] SELECT ... FROM v_mascotas_vacunacion_pendiente (73ms)
+[2026-04-19T10:15:32.201Z] [CACHE SET] vacunacion:pendiente:all:veterinario TTL=300s
 
-[2026-04-19T10:15:35.456Z] GET /api/vacunaciones/pendientes
-[2026-04-19T10:15:35.457Z] [CACHE HIT] vacunacion:pendiente:all (respuesta en <1ms)
+[2026-04-19T10:15:35.456Z] GET /api/vacunaciones/pendientes (como Veterinario)
+[2026-04-19T10:15:35.457Z] [CACHE HIT] vacunacion:pendiente:all:veterinario (respuesta en <1ms)
 
-[2026-04-19T10:16:02.789Z] POST /api/vacunaciones (nueva vacuna aplicada)
+[2026-04-19T10:16:02.789Z] POST /api/vacunas-aplicadas (nueva vacuna aplicada)
 [2026-04-19T10:16:02.834Z] [DB INSERT] vacunas_aplicadas OK
-[2026-04-19T10:16:02.836Z] [CACHE INVALIDATED] vacunacion:pendiente:all
+[2026-04-19T10:16:02.836Z] [CACHE INVALIDATED] vacunacion:pendiente:all:veterinario
+[2026-04-19T10:16:02.836Z] [CACHE INVALIDATED] vacunacion:pendiente:all:administrador
 
-[2026-04-19T10:16:10.012Z] GET /api/vacunaciones/pendientes
-[2026-04-19T10:16:10.014Z] [CACHE MISS] vacunacion:pendiente:all
-[2026-04-19T10:16:10.089Z] [DB QUERY] SELECT ... FROM v_vacunaciones_pendientes (75ms)
-[2026-04-19T10:16:10.091Z] [CACHE SET] vacunacion:pendiente:all TTL=300s
+[2026-04-19T10:16:10.012Z] GET /api/vacunaciones/pendientes (como Veterinario)
+[2026-04-19T10:16:10.014Z] [CACHE MISS] vacunacion:pendiente:all:veterinario
+[2026-04-19T10:16:10.089Z] [DB QUERY] SELECT ... FROM v_mascotas_vacunacion_pendiente (75ms)
+[2026-04-19T10:16:10.091Z] [CACHE SET] vacunacion:pendiente:all:veterinario TTL=300s
 ```
 
 ---
@@ -199,13 +203,23 @@ vacunacion:pendiente:all
 
 ### Prueba C-3: INVALIDACION por escritura
 
-**Acción:** Se registra una nueva vacuna via `POST /api/vacunaciones`.
+**Acción:** Se registra una nueva vacuna via `POST /api/vacunas-aplicadas`.
 
-**Resultado:** El handler de POST, tras el INSERT exitoso en PostgreSQL, ejecuta `DEL vacunacion:pendiente:all` en Redis. La clave deja de existir en caché.
+**Resultado:** El handler de POST, tras el INSERT exitoso en PostgreSQL, ejecuta la eliminación de todas las claves particionadas (`vacunacion:pendiente:all:veterinario` y `administrador`) en Redis. Las claves dejan de existir en caché.
 
-**Observación:** La invalidación es inmediata y síncrona — la respuesta del POST no se envía hasta confirmar tanto el INSERT como el DEL en Redis.
+**Observación:** La invalidación es inmediata y síncrona — la respuesta del POST no se envía hasta confirmar tanto el INSERT como el borrado en Redis.
 
 ![Cache Invalidate](evidencias/cache_invalidate.png)
+
+---
+
+### Prueba C-X: Evasión de Caché (Cache Bypass) Prevenida
+
+**Acción:** Iniciar sesión como `recepcion` y solicitar `GET /api/vacunaciones/pendientes`.
+
+**Resultado:** Como el rol es `recepcion`, Redis busca la clave `vacunacion:pendiente:all:recepcion`. Al no existir, consulta a PostgreSQL. PostgreSQL detecta la falta de permisos (`GRANT`) de este rol y retorna un error HTTP 403 (Acceso Denegado).
+
+**Observación:** Particionar la clave de Redis por rol permite que sea la Base de Datos (y no la lógica del backend) la única fuente de la verdad para denegar el acceso.
 
 ---
 
